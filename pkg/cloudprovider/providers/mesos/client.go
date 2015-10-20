@@ -32,7 +32,6 @@ import (
 	"golang.org/x/net/context"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/resource"
-	"k8s.io/kubernetes/pkg/util"
 )
 
 const defaultClusterName = "mesos"
@@ -103,8 +102,15 @@ func newMesosClient(
 	md detector.Master,
 	mesosHttpClientTimeout, stateCacheTTL time.Duration) (*mesosClient, error) {
 
-	tr := util.SetTransportDefaults(&http.Transport{})
-	httpClient := &http.Client{
+	tr := &http.Transport{
+                Proxy: http.ProxyFromEnvironment,
+                Dial: (&net.Dialer{
+                        Timeout:   30 * time.Second,
+                        KeepAlive: 30 * time.Second,
+                }).Dial,
+                TLSHandshakeTimeout: 10 * time.Second,
+        }
+        httpClient := &http.Client{
 		Transport: tr,
 		Timeout:   mesosHttpClientTimeout,
 	}
